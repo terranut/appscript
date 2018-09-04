@@ -16,7 +16,7 @@ function onSubmit(e){//Recibe objeto con valores del formulario
   sendMail(responses);
 }
 //////////////////////////////////////////////////////////////////////////////
-
+//Envia un email con las respuestas
 function sendMail(responses){//Envia mail con respuestas
   var subject = "Respuestas del formulario";
   var mail = 'jl.cerrada@altostratus.es';
@@ -34,3 +34,76 @@ function sendMail(responses){//Envia mail con respuestas
   MailApp.sendEmail('j.mendoza@altostratus.es',subject,"",{htmlBody:message});
 
 }
+//////////////////////////////////////////////////////////////////////////////
+function crearRespuesta(texto){//Modifica el formulario respuestas con la pregunta elegida.
+  var pregunta=texto;
+  var form = FormApp.openById('1KEj_gE44ofB_cZPk6RfzwegEh6jnkFdmr1ev6ADTWYQ'); //Id de formulario existente
+  try{
+    form.deleteItem(0);
+  
+  }catch(err){  
+    
+  }
+  
+  var item = form.addParagraphTextItem().setRequired(true);
+  item.setTitle(pregunta).isRequired();
+  
+
+  
+  return false;
+}
+////////////////////////////////////////////////////////////
+function crearRespuesta(texto){//Modifica el formulario respuestas con la pregunta elegida.
+  var pregunta=texto;
+  var form = FormApp.openById('1KEj_gE44ofB_cZPk6RfzwegEh6jnkFdmr1ev6ADTWYQ'); 
+  try{
+    form.deleteItem(0);
+  
+  }catch(err){  
+    
+  }
+  
+  var item = form.addParagraphTextItem().setRequired(true);
+  item.setTitle(pregunta).isRequired();
+  
+
+  
+  return false;
+}
+////////////////////////////////////////////////////////////
+function getRespuestas(){
+  var form = FormApp.openById('1KEj_gE44ofB_cZPk6RfzwegEh6jnkFdmr1ev6ADTWYQ');
+  
+  var enunciado = '';
+  form.getResponses().forEach(function(respuesta){
+     var item = respuesta.getItemResponses();
+     enunciado = item[0].getItem().getTitle();
+     //Logger.log(enunciado);
+     //var enunciado = item[0].getItem().getTitle()
+     //Logger.log(item);
+  });
+  
+ 
+  var sheet = docs().preguntas.getRange(2,1,docs().preguntas.getLastRow(),7).getValues();
+ 
+  var fila = '';
+  for (i=0; i<sheet.length; i++){
+      var marca = sheet[i][0];
+      var mail = sheet[i][1];
+      var question = sheet[i][2];
+      var r1 = sheet[i][3];
+      var r2 = sheet[i][4];
+      var r3 = sheet[i][5];
+      var r4 = sheet[i][6];
+    
+    if(enunciado == sheet[i][2]) docs().preguntas.getRange(i+2,1,1,7).setValues([ [marca,mail,question,r1,r2,r3,r4] ]);
+      
+  }
+
+  Logger.log('fila '+fila);
+ 
+  
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
