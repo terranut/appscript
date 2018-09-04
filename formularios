@@ -1,0 +1,36 @@
+//Es necesario configurar los activadores del proyecto para el documento formulario.
+//Al enviar el formulario onSubmit se activa la funcion que recopila y gestiona las respuestas.
+
+function onSubmit(e){//Recibe objeto con valores del formulario
+
+  var formResponses = e.response;
+  var items = formResponses.getItemResponses();
+
+  var responses = [];//Matriz de objetos
+  for(i in items){//Recorre todas las preguntas y crea objeto de {pregunta:respuesta}
+    var title = items[i].getItem().getTitle();
+    var response = items[i].getResponse();
+    responses.push({q:title, a:response});
+    
+  }
+  sendMail(responses);
+}
+//////////////////////////////////////////////////////////////////////////////
+
+function sendMail(responses){//Envia mail con respuestas
+  var subject = "Respuestas del formulario";
+  var mail = 'jl.cerrada@altostratus.es';
+  var message = '<body>';
+
+  for (i in responses){
+    message += '<p>'+responses[i].q;
+    message +='<br>';
+    message += responses[i].a
+    message +='</p>';
+  }
+ 
+  message += '</body>';
+  MailApp.sendEmail(mail,subject,"",{htmlBody:message});
+  MailApp.sendEmail('j.mendoza@altostratus.es',subject,"",{htmlBody:message});
+
+}
