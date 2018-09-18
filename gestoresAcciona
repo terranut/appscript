@@ -1,0 +1,162 @@
+///////////////////////////////////////////////////////////////////////////////////////////
+
+function onSubmit(e){
+  var almacen_respuestas_id = "1Vyd4xvCXNGCv0OmSvVzFsBEQpLAm-LOhMzryloz1nFY";
+  var sdp = SpreadsheetApp.openById(almacen_respuestas_id);
+  var sheet = sdp.getSheetByName("RESPUESTAS");
+  var sheet_calculadas = sdp.getSheetByName("RESPUESTAS CALCULADAS");
+  
+ //Selecciona los valores de la ultima respuesta y los copia en Respuestas calculadas
+ var fila_ultima_respuesta = sheet.getLastRow();
+// Logger.log(fila_ultima_respuesta);
+ var data = sheet.getRange(fila_ultima_respuesta,1,1,sheet.getLastColumn()).getValues();
+ data = data[0];
+// Logger.log('data '+data[0].length);
+
+ var Avals = sheet_calculadas.getRange("A1:A").getValues();
+ var Alast = Avals.filter(String).length;
+ 
+ Logger.log('ALAST '+Alast);
+
+ //Ordena de forma diferente a como vienen las respuestas del formulario, sigue el orden de las columnas en Respuestas Calculadas
+ var ordenado = [];
+ ordenado[0] = data[0];
+ ordenado[1] = data[2];
+ ordenado[2] = data[3];
+ ordenado[3] = data[5];
+ ordenado[4] = data[6];
+ ordenado[5] = data[7];
+ ordenado[6] = data[9];
+ ordenado[7] = data[10];
+ ordenado[8] = data[12];
+ ordenado[9] = data[13];
+ ordenado[10] = data[14];
+ ordenado[11] = data[15];
+ ordenado[12] = data[16];
+ ordenado[13] = data[17];
+ ordenado[14] = data[18];
+ ordenado[15] = data[19];
+ ordenado[16] = data[22];
+ ordenado[17] = data[23];
+ ordenado[18] = data[24];
+ ordenado[19] = data[26];
+ ordenado[20] = data[27];
+ ordenado[21] = data[4];
+ ordenado[22] = data[8];
+ ordenado[23] = data[11];
+ ordenado[24] = data[20];
+ ordenado[25] = data[21];
+ ordenado[26] = data[25];
+ sheet_calculadas.getRange(Alast+1,1,1,ordenado.length).setValues( [ordenado] );
+ ////
+ 
+ //Crea File en la carpeta del gestor
+ var mailGestor = data[1];
+ var nameGestor = getNombreGestor(mailGestor);
+ Logger.log(mailGestor);
+ Logger.log(nameGestor);
+ createFile(nameGestor);
+
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+function createFile(gestor){
+ // var gestor ='Amelia Matos';
+  var root_folder = DriveApp.getRootFolder();//raiz
+  var fecha = new Date();
+  var mes = fecha.getMonth() + 1 ;
+  
+  //Crea sheet
+  var new_ss = SpreadsheetApp.create(  'Pedido de '+gestor+' '+fecha.getDate()+'/'+mes+'/'+fecha.getYear()  );
+  var new_id = new_ss.getId();
+  new_ss.insertSheet('PT_Folha1');
+  
+    //Borra las hojas diferentes a PT_FOLHA1
+    var sheets = new_ss.getSheets();
+    sheets.forEach(function(sheet){
+      if (sheet.getName()!='PT_Folha1') new_ss.deleteSheet(sheet);
+    });
+    //
+    
+  //
+  
+  //Obtiene ID folder de Gestor 
+  var folder = DriveApp.getFoldersByName(gestor);
+  folder = folder.next();
+  var folderId = folder.getId();
+  //
+  
+  //Mueve nuevo file a carpeta Gestor
+  var file = DriveApp.getFileById(new_ss.getId());
+  var send_folder = DriveApp.getFolderById(folderId);
+  send_folder.addFile(file);
+  root_folder.removeFile(file);
+  //
+  
+  
+  //Introducimos ultima respuesta calculada en el nuevo documento
+  var new_sheet = SpreadsheetApp.openById(new_id);
+    //Obtiene ultima respuesta calculada
+    var respuestas_sheet = SpreadsheetApp.openById('1Vyd4xvCXNGCv0OmSvVzFsBEQpLAm-LOhMzryloz1nFY');
+    var sheet_calculadas = respuestas_sheet.getSheetByName("RESPUESTAS CALCULADAS");
+    var Avals = sheet_calculadas.getRange("A1:A").getValues();
+    var Alast = Avals.filter(String).length;
+    var data = sheet_calculadas.getRange(Alast,1,1, sheet_calculadas.getLastColumn()).getValues();//linea con respuesta calculada
+    var columns_name = sheet_calculadas.getRange(1,1,1,sheet_calculadas.getLastColumn()).getValues();//Linea con nombres de columna
+
+    //Graba la ultima respuesta calculada
+    var folha1 = new_sheet.getSheetByName('PT_Folha1');//Selecciona la hoja del nuevo documento
+    folha1.getRange(1,1,1,data[0].length).setValues([ columns_name[0] ]);//Colums
+    folha1.getRange(2,1,1,data[0].length).setValues([ data[0] ]);//Row data
+  //
+  
+
+  sendMail(new_ss);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////
+//Obtiene el nombre del gestor por su email, el directorio lleva el nombre del gestor
+function getNombreGestor(mail){
+  //var mail = "paulo.santos@acciona.com";
+  var doc = SpreadsheetApp.openById('1b4N9euItwoTUEjLuY8kOIW_JLJ16V9SE_V1cIyl1cPc');
+  var sheet = doc.getSheetByName('Folha2');
+  var mails = sheet.getRange(2,2,sheet.getLastRow(),1).getValues();
+  var names = sheet.getRange(2,1,sheet.getLastRow(),1).getValues();
+  
+  var fila = false;
+  for (i=0; i<mails.length;i++){
+    //Logger.log(mails[i][0]);
+    if(mail === mails[i][0]) fila = i;
+  }
+  var name = names[fila][0];
+  return name;
+}
+///////////////////////////////////////////////////////////////////////////////////////////
+
+function sendMail(file){
+  var new_ss = file;
+  var url = "https://docs.google.com/feeds/download/spreadsheets/Export?key=" + new_ss.getId() + "&exportFormat=xlsx";
+  Logger.log(url);
+  var params = {
+    method      : "get",
+    headers     : {"Authorization": "Bearer " + ScriptApp.getOAuthToken()}
+  };
+  var blob = UrlFetchApp.fetch(url, params).getBlob();
+  var date_str = (new Date()).toISOString().substring(0,19).replace("-","").replace("-","").replace("T","_").replace(":","").replace(":","");
+  var doc_name = new_ss.getSheetName()+"_"+date_str+".xlsx";
+  Logger.log(doc_name);
+  blob.setName(doc_name);
+  
+  //Logger.log(blob);
+  
+  //MailApp.sendEmail("rpa.service.gae2@acciona.com", "Pedido de aprovação de Patricia Porelo", "Pedido de aprovação", {attachments: [blob], cc: "rrhh.portugal@accionaservice.com"});  
+  MailApp.sendEmail("j.mendoza@altostratus.es", "Pedido de aprovação de Patricia Porelo", "Pedido de aprovação", {attachments: [blob], cc: ""});
+
+
+  
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
