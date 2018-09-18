@@ -19,7 +19,7 @@ function onSubmit(e){//Recibe objeto con valores del formulario
 //Envia un email con las respuestas
 function sendMail(responses){//Envia mail con respuestas
   var subject = "Respuestas del formulario";
-  var mail = 'jl.cerrada@altostratus.es';
+  var mail = '';
   var message = '<body>';
 
   for (i in responses){
